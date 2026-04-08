@@ -273,14 +273,12 @@ MqttStatus mqtt_manager_get_status(void) {
   MqttStatus st = {0};
   st.connected = s_connected;
   strncpy(st.host, s_broker_host, sizeof(st.host) - 1);
-  st.host[sizeof(st.host) - 1] = '\0';
 
   AppConfig *config = config_get();
   if (config) {
     st.port = config->mqtt_broker_port;
     if (config->mqtt_username) {
       strncpy(st.username, config->mqtt_username, sizeof(st.username) - 1);
-      st.username[sizeof(st.username) - 1] = '\0';
     }
     config_free(config);
   }
