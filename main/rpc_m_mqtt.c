@@ -43,7 +43,7 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
         return jsonrpc_response_create(NULL, "Invalid params: 'password' must be a string", JSONRPC_INVALID_PARAMS);
     }
 
-    if (host_json && cJSON_IsString(host_json)) {
+    if (host_json) {
         free(config->mqtt_broker_host);
         config->mqtt_broker_host = strdup(host_json->valuestring);
         if (!config->mqtt_broker_host) {
@@ -52,7 +52,7 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
         }
     }
 
-    if (port_json && cJSON_IsNumber(port_json)) {
+    if (port_json) {
         int port_val = port_json->valueint;
         if (port_val <= 0 || port_val > 65535) {
             config_free(config);
@@ -61,7 +61,7 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
         config->mqtt_broker_port = (uint16_t)port_val;
     }
 
-    if (username_json && cJSON_IsString(username_json)) {
+    if (username_json) {
         free(config->mqtt_username);
         config->mqtt_username = strdup(username_json->valuestring);
         if (!config->mqtt_username) {
@@ -70,7 +70,7 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
         }
     }
 
-    if (password_json && cJSON_IsString(password_json)) {
+    if (password_json) {
         free(config->mqtt_password);
         config->mqtt_password = strdup(password_json->valuestring);
         if (!config->mqtt_password) {

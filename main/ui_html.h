@@ -173,7 +173,7 @@ static const char UI_HTML[] =
 "    if(r.result){"
 "      document.getElementById('devname').textContent=r.result.device_name||'ESP32-C3 Panel';"
 "      document.getElementById('subtitle').textContent="
-"        r.result.model+' | IDF '+r.result.idf_version+'  |  Free heap: '+r.result.free_heap+' B';"
+"        r.result.model+' | IDF '+r.result.idf_version+' | Free heap: '+r.result.free_heap+' B';"
 "      document.getElementById('sys-info').textContent=pretty(r.result);"
 "    }else{"
 "      document.getElementById('sys-info').textContent='Error: '+JSON.stringify(r.error);"
