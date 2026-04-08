@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const char *product_name = "Shelly.EricZ";
+static const char *product_name = "EricZ";
 static const char *KEY_CONFIG = "config";
 static const char *KEY_NAMESPACE = "app";
 

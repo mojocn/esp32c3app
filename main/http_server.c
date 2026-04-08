@@ -3,10 +3,12 @@
 #include "config.h"
 #include "esp_log.h"
 #include "rpc_m.h"
-#include "ui_html.h"
+#include "web_binary.h"
 
 #include <stdint.h>
 #include <stdlib.h>
+
+#define FILE_SIZE(start, end) (end - start)
 
 static const char *TAG = "HTTP";
 
@@ -73,14 +75,41 @@ static esp_err_t jsonrpc_handler(httpd_req_t *req) {
   }
   return ESP_OK;
 }
+static httpd_uri_t jsonrpc_uri = {.uri = "/rpc", .method = HTTP_POST, .handler = jsonrpc_handler, .user_ctx = NULL};
 
-static esp_err_t ui_handler(httpd_req_t *req) {
-  httpd_resp_set_type(req, "text/html");
-  httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
-  size_t len = (size_t)(index_html_gz_end - index_html_gz_start);
-  httpd_resp_send(req, (const char *)index_html_gz_start, (ssize_t)len);
+// 1. 返回 index.html
+esp_err_t http_index_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "text/html"); // MIME类型
+  httpd_resp_send(req, (const char *)_binary_index_html_start, FILE_SIZE(_binary_index_html_start, _binary_index_html_end));
   return ESP_OK;
 }
+
+static httpd_uri_t ui_uri = {.uri = "/", .method = HTTP_GET, .handler = http_index_handler, .user_ctx = NULL};
+static httpd_uri_t ui_uri_index = {.uri = "/index.html", .method = HTTP_GET, .handler = http_index_handler, .user_ctx = NULL};
+
+// 2. 返回 CSS
+esp_err_t http_css_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "text/css");
+  httpd_resp_send(req, (const char *)_binary_style_css_start, FILE_SIZE(_binary_style_css_start, _binary_style_css_end));
+  return ESP_OK;
+}
+static httpd_uri_t ui_uri_css = {.uri = "/style.css", .method = HTTP_GET, .handler = http_css_handler, .user_ctx = NULL};
+
+// 3. 返回 JS
+esp_err_t http_js_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "application/javascript");
+  httpd_resp_send(req, (const char *)_binary_app_js_start, FILE_SIZE(_binary_app_js_start, _binary_app_js_end));
+  return ESP_OK;
+}
+static httpd_uri_t ui_uri_js = {.uri = "/app.js", .method = HTTP_GET, .handler = http_js_handler, .user_ctx = NULL};
+// 4. 返回图标
+esp_err_t http_favicon_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "image/x-icon");
+  httpd_resp_send(req, (const char *)_binary_favicon_ico_start, FILE_SIZE(_binary_favicon_ico_start, _binary_favicon_ico_end));
+  return ESP_OK;
+}
+
+static httpd_uri_t ui_uri_favicon = {.uri = "/favicon.ico", .method = HTTP_GET, .handler = http_favicon_handler, .user_ctx = NULL};
 
 httpd_handle_t http_server_start(void) {
   httpd_handle_t server = NULL;
@@ -93,10 +122,12 @@ httpd_handle_t http_server_start(void) {
   ESP_LOGI(TAG, "Starting HTTP Server on port: '%d'", config.server_port);
   if (httpd_start(&server, &config) == ESP_OK) {
     /* Register URI handlers */
-    httpd_uri_t ui_uri = {.uri = "/", .method = HTTP_GET, .handler = ui_handler, .user_ctx = NULL};
     httpd_register_uri_handler(server, &ui_uri);
-
-    httpd_uri_t jsonrpc_uri = {.uri = "/rpc", .method = HTTP_POST, .handler = jsonrpc_handler, .user_ctx = NULL};
+    httpd_register_uri_handler(server, &ui_uri_index);
+    httpd_register_uri_handler(server, &ui_uri_css);
+    httpd_register_uri_handler(server, &ui_uri_js);
+    httpd_register_uri_handler(server, &ui_uri_favicon);
+    // json rpc
     httpd_register_uri_handler(server, &jsonrpc_uri);
     return server;
   }

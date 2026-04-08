@@ -107,6 +107,9 @@ void wifi_config_apply(const AppConfig *config) {
   if (config->wifi_ap_enabled && (!ap_ssid || ap_ssid[0] == '\0')) {
     ap_ssid = device_name();
   }
+  if (config->wifi_sta_enabled && (!sta_ssid || sta_ssid[0] == '\0')) {
+    sta_ssid = device_name();
+  }
 
   wifi_config_t sta_cfg = {0};
   wifi_config_t ap_cfg = {0};

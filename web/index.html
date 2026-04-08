@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ESP32-C3 Panel</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <h1>ESP32&#8209;C3 &nbsp;<span id="hdr-name">Panel</span></h1>
+    <div id="status-dot" class="dot offline"></div>
+  </header>
+
+  <nav>
+    <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="wifi">WiFi</button>
+    <button class="tab" data-tab="lights">Lights</button>
+    <button class="tab" data-tab="display">Display</button>
+    <button class="tab" data-tab="mqtt">MQTT</button>
+    <button class="tab" data-tab="cron">Cron</button>
+    <button class="tab" data-tab="system">System</button>
+  </nav>
+
+  <main>
+
+    <!-- ── Dashboard ── -->
+    <section id="dashboard" class="tab-content active">
+      <div class="card">
+        <h2>System</h2>
+        <dl id="sys-info">
+          <dt>status</dt>
+          <dd>loading…</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h2>Sensor (DHT11)</h2>
+        <dl id="ht-info">
+          <dt>status</dt>
+          <dd>loading…</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h2>WiFi</h2>
+        <dl id="wifi-dash">
+          <dt>status</dt>
+          <dd>loading…</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ── WiFi ── -->
+    <section id="wifi" class="tab-content">
+      <div class="card">
+        <h2>Station (STA)</h2>
+        <form id="wifi-sta-form">
+          <label>SSID<input type="text" name="ssid" placeholder="Network name"></label>
+          <label>Password<input type="password" name="password" placeholder="Leave blank to keep current"></label>
+          <label class="row"><input type="checkbox" name="enable" checked> Enable</label>
+          <button type="submit">Apply STA</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Access Point (AP)</h2>
+        <form id="wifi-ap-form">
+          <label>SSID<input type="text" name="ssid" placeholder="AP name"></label>
+          <label>Password<input type="password" name="password" placeholder="Leave blank to keep current"></label>
+          <label class="row"><input type="checkbox" name="enable" checked> Enable</label>
+          <button type="submit">Apply AP</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Lights ── -->
+    <section id="lights" class="tab-content">
+      <div class="card">
+        <h2>LED Control</h2>
+        <div class="led-row">
+          <span>GPIO 0</span>
+          <button class="led-on sm" onclick="setLed(0,1)">ON</button>
+          <button class="led-off sm" onclick="setLed(0,0)">OFF</button>
+        </div>
+        <div class="led-row">
+          <span>GPIO 4</span>
+          <button class="led-on sm" onclick="setLed(4,1)">ON</button>
+          <button class="led-off sm" onclick="setLed(4,0)">OFF</button>
+        </div>
+        <div class="led-row">
+          <span>GPIO 5</span>
+          <button class="led-on sm" onclick="setLed(5,1)">ON</button>
+          <button class="led-off sm" onclick="setLed(5,0)">OFF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>RGB LED</h2>
+        <label>Color<input type="color" id="rgb-picker" value="#ff0000"></label>
+        <div id="rgb-preview"></div>
+        <label class="row"><input type="checkbox" id="rgb-on" checked> On</label>
+        <button onclick="setRgb()">Set RGB</button>
+      </div>
+    </section>
+
+    <!-- ── Display ── -->
+    <section id="display" class="tab-content">
+      <div class="card">
+        <h2>MAX7219 Effect</h2>
+        <label>Effect #<input type="number" id="effect-n" min="0" max="255" value="0"></label>
+        <div class="btn-row">
+          <button onclick="setEffect(false)">Run Effect</button>
+          <button onclick="setEffect(true)">Random</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MQTT ── -->
+    <section id="mqtt" class="tab-content">
+      <div class="card">
+        <h2>Broker Status</h2>
+        <div id="mqtt-status" style="margin-bottom:8px"></div>
+        <dl id="mqtt-info"></dl>
+      </div>
+      <div class="card">
+        <h2>Broker Config</h2>
+        <form id="mqtt-form">
+          <label>Host<input type="text" name="host" placeholder="broker.example.com"></label>
+          <label>Port<input type="number" name="port" value="1883" min="1" max="65535"></label>
+          <label>Username<input type="text" name="username" placeholder="optional"></label>
+          <label>Password<input type="password" name="password" placeholder="optional"></label>
+          <button type="submit">Save &amp; Reconnect</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Cron ── -->
+    <section id="cron" class="tab-content">
+      <div class="card full">
+        <h2>Cron Jobs</h2>
+        <div id="cron-list">
+          <p class="muted">Loading…</p>
+        </div>
+        <h3>Add Job</h3>
+        <form id="cron-form">
+          <label>Cron Expression<input type="text" name="expression" placeholder="* * * * * *" required></label>
+          <label>RPC Method<input type="text" name="method" placeholder="Light.Led.Set" required></label>
+          <label>Params (JSON, optional)<input type="text" name="params" placeholder='{"gpio":4,"state":1}'></label>
+          <label class="row"><input type="checkbox" name="enabled" checked> Enabled</label>
+          <button type="submit">Add Job</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── System ── -->
+    <section id="system" class="tab-content">
+      <div class="card">
+        <h2>Device Config</h2>
+        <form id="config-form">
+          <label>Device Name<input type="text" id="cfg-device-name" name="device_name" placeholder="esp32c3"></label>
+          <button type="submit">Save</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>OTA Update</h2>
+        <form id="ota-form">
+          <label>Firmware URL<input type="text" name="url" placeholder="http://192.168.1.x/firmware.bin"></label>
+          <button type="submit">Start OTA</button>
+        </form>
+      </div>
+      <div class="card full">
+        <h2>Actions</h2>
+        <div class="btn-row">
+          <button id="reboot-btn" class="warn">Reboot</button>
+          <button id="factory-btn" class="danger">Factory Reset</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>
