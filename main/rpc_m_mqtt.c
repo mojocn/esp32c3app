@@ -44,12 +44,13 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
     }
 
     if (host_json) {
-        free(config->mqtt_broker_host);
-        config->mqtt_broker_host = strdup(host_json->valuestring);
-        if (!config->mqtt_broker_host) {
+        char *new_host = strdup(host_json->valuestring);
+        if (!new_host) {
             config_free(config);
             return jsonrpc_response_create(NULL, "Out of memory", JSONRPC_INTERNAL_ERROR);
         }
+        free(config->mqtt_broker_host);
+        config->mqtt_broker_host = new_host;
     }
 
     if (port_json) {
@@ -62,21 +63,23 @@ JsonRpcResponse *m_mqtt_set(cJSON *params) {
     }
 
     if (username_json) {
-        free(config->mqtt_username);
-        config->mqtt_username = strdup(username_json->valuestring);
-        if (!config->mqtt_username) {
+        char *new_username = strdup(username_json->valuestring);
+        if (!new_username) {
             config_free(config);
             return jsonrpc_response_create(NULL, "Out of memory", JSONRPC_INTERNAL_ERROR);
         }
+        free(config->mqtt_username);
+        config->mqtt_username = new_username;
     }
 
     if (password_json) {
-        free(config->mqtt_password);
-        config->mqtt_password = strdup(password_json->valuestring);
-        if (!config->mqtt_password) {
+        char *new_password = strdup(password_json->valuestring);
+        if (!new_password) {
             config_free(config);
             return jsonrpc_response_create(NULL, "Out of memory", JSONRPC_INTERNAL_ERROR);
         }
+        free(config->mqtt_password);
+        config->mqtt_password = new_password;
     }
 
     config_save(config);
