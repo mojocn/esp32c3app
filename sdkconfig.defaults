@@ -1,0 +1,23 @@
+# sdkconfig.defaults – applied when sdkconfig is regenerated
+# Run: idf.py reconfigure   (or delete sdkconfig and run idf.py build)
+
+# Flash size (must be large enough for custom partition table)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Custom partition table
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Enable Bluetooth and NimBLE host stack
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+
+# Peripheral role only (saves RAM vs. central+observer)
+CONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED=y
+CONFIG_BT_NIMBLE_ROLE_OBSERVER_DISABLED=y
+
+# Allow up to 3 simultaneous BLE connections
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=3
+
+# Preferred ATT MTU (bytes).  Larger = fewer chunks for big JSON responses.
+CONFIG_BT_NIMBLE_ATT_PREFERRED_MTU=512
