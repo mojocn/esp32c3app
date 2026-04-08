@@ -4,6 +4,9 @@ build/
 *.elf
 *.map
 
+# Generated files
+main/index.html.gz
+
 # ESP-IDF specific
 sdkconfig
 sdkconfig.old

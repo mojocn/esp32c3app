@@ -5,6 +5,7 @@
 #include "rpc_m.h"
 #include "ui_html.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 static const char *TAG = "HTTP";
@@ -75,7 +76,9 @@ static esp_err_t jsonrpc_handler(httpd_req_t *req) {
 
 static esp_err_t ui_handler(httpd_req_t *req) {
   httpd_resp_set_type(req, "text/html");
-  httpd_resp_send(req, UI_HTML, (ssize_t)sizeof(UI_HTML) - 1);
+  httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+  size_t len = (size_t)(index_html_gz_end - index_html_gz_start);
+  httpd_resp_send(req, (const char *)index_html_gz_start, (ssize_t)len);
   return ESP_OK;
 }
 
