@@ -3,6 +3,7 @@
 #include "config.h"
 #include "esp_log.h"
 #include "rpc_m.h"
+#include "ui_html.h"
 
 #include <stdlib.h>
 
@@ -72,17 +73,26 @@ static esp_err_t jsonrpc_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+static esp_err_t ui_handler(httpd_req_t *req) {
+  httpd_resp_set_type(req, "text/html");
+  httpd_resp_send(req, UI_HTML, (ssize_t)sizeof(UI_HTML) - 1);
+  return ESP_OK;
+}
+
 httpd_handle_t http_server_start(void) {
   httpd_handle_t server = NULL;
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.uri_match_fn = httpd_uri_match_wildcard;
-  config.max_uri_handlers = 8;
+  config.max_uri_handlers = 10;
   config.max_resp_headers = 8;
   config.lru_purge_enable = true;
 
   ESP_LOGI(TAG, "Starting HTTP Server on port: '%d'", config.server_port);
   if (httpd_start(&server, &config) == ESP_OK) {
     /* Register URI handlers */
+    httpd_uri_t ui_uri = {.uri = "/", .method = HTTP_GET, .handler = ui_handler, .user_ctx = NULL};
+    httpd_register_uri_handler(server, &ui_uri);
+
     httpd_uri_t jsonrpc_uri = {.uri = "/rpc", .method = HTTP_POST, .handler = jsonrpc_handler, .user_ctx = NULL};
     httpd_register_uri_handler(server, &jsonrpc_uri);
     return server;
