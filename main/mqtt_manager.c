@@ -269,6 +269,22 @@ static esp_err_t mqtt_manager_start_internal(AppConfig *config) {
   return ESP_OK;
 }
 
+MqttStatus mqtt_manager_get_status(void) {
+  MqttStatus st = {0};
+  st.connected = s_connected;
+  strncpy(st.host, s_broker_host, sizeof(st.host) - 1);
+
+  AppConfig *config = config_get();
+  if (config) {
+    st.port = config->mqtt_broker_port;
+    if (config->mqtt_username) {
+      strncpy(st.username, config->mqtt_username, sizeof(st.username) - 1);
+    }
+    config_free(config);
+  }
+  return st;
+}
+
 esp_err_t mqtt_manager_publish(const char *topic, const char *data) {
   if (!topic || !data) {
     return ESP_ERR_INVALID_ARG;

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP32-C3 Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f0f2f5;color:#222;padding:16px}
+h1{font-size:1.3rem;margin-bottom:4px;color:#1a56db}
+#subtitle{font-size:.85rem;color:#666;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.card h2{font-size:1rem;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee;color:#374151}
+label{display:block;font-size:.82rem;color:#555;margin-bottom:2px;margin-top:8px}
+input[type=text],input[type=password],input[type=number]{width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;outline:none}
+input:focus{border-color:#1a56db;box-shadow:0 0 0 2px rgba(26,86,219,.15)}
+.row{display:flex;align-items:center;gap:8px;margin-top:8px}
+button{padding:7px 16px;border:none;border-radius:6px;font-size:.88rem;cursor:pointer;transition:background .15s}
+.btn-primary{background:#1a56db;color:#fff}
+.btn-primary:hover{background:#1648c0}
+.btn-danger{background:#e02424;color:#fff}
+.btn-danger:hover{background:#c81e1e}
+.btn-warn{background:#d97706;color:#fff}
+.btn-warn:hover{background:#b45309}
+.btn-sm{padding:5px 11px;font-size:.82rem}
+.status-box{margin-top:10px;font-size:.82rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.75rem;font-weight:600}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-grey{background:#f3f4f6;color:#6b7280}
+details summary{cursor:pointer;font-size:.9rem;font-weight:600;color:#374151;padding:4px 0}
+details summary:hover{color:#1a56db}
+#methods-list{margin-top:8px;columns:2;font-size:.8rem;color:#374151}
+#methods-list li{margin-bottom:3px;list-style:disc;margin-left:16px}
+#rpc-in{width:100%;height:72px;font-family:monospace;font-size:.8rem;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;outline:none}
+#rpc-in:focus{border-color:#1a56db}
+</style>
+</head>
+<body>
+<h1 id="devname">ESP32-C3 Panel</h1>
+<div id="subtitle">Loading device info&#8230;</div>
+<div class="grid">
+
+<!-- WiFi STA Settings -->
+<div class="card">
+<h2>&#128246; WiFi STA Settings</h2>
+<label>SSID</label>
+<input type="text" id="sta-ssid" placeholder="Your WiFi network name">
+<label>Password</label>
+<input type="password" id="sta-pass" placeholder="Leave blank to keep current">
+<div class="row" style="margin-top:12px">
+<label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer">
+<input type="checkbox" id="sta-en" checked> Enable STA</label>
+<button class="btn-primary btn-sm" onclick="applyWifiSta()">Apply</button>
+</div>
+<div class="status-box" id="sta-result">&#8212;</div>
+</div>
+
+<!-- MQTT Settings -->
+<div class="card">
+<h2>&#128241; MQTT Settings</h2>
+<label>Broker Host</label>
+<input type="text" id="mqtt-host" placeholder="broker.example.com">
+<label>Port</label>
+<input type="number" id="mqtt-port" placeholder="1883" min="1" max="65535">
+<label>Username</label>
+<input type="text" id="mqtt-user" placeholder="(optional)">
+<label>Password</label>
+<input type="password" id="mqtt-pass" placeholder="Leave blank to keep current">
+<div class="row" style="margin-top:12px">
+<button class="btn-primary btn-sm" onclick="applyMqtt()">Apply</button>
+</div>
+<div class="status-box" id="mqtt-set-result">&#8212;</div>
+</div>
+
+<!-- WiFi Status -->
+<div class="card">
+<h2>&#127760; WiFi Status <span id="wifi-badge" class="badge badge-grey">&#8230;</span></h2>
+<div class="status-box" id="wifi-info">Loading&#8230;</div>
+<div class="row" style="margin-top:8px">
+<button class="btn-primary btn-sm" onclick="loadWifiInfo()">Refresh</button>
+</div>
+</div>
+
+<!-- MQTT Status -->
+<div class="card">
+<h2>&#128200; MQTT Status <span id="mqtt-badge" class="badge badge-grey">&#8230;</span></h2>
+<div class="status-box" id="mqtt-info">Loading&#8230;</div>
+<div class="row" style="margin-top:8px">
+<button class="btn-primary btn-sm" onclick="loadMqttInfo()">Refresh</button>
+</div>
+</div>
+
+<!-- System Info -->
+<div class="card">
+<h2>&#128736; System Info</h2>
+<div class="status-box" id="sys-info">Loading&#8230;</div>
+<div class="row" style="margin-top:8px">
+<button class="btn-primary btn-sm" onclick="loadSysInfo()">Refresh</button>
+</div>
+</div>
+
+<!-- Actions -->
+<div class="card">
+<h2>&#9889; Actions</h2>
+<div class="row" style="flex-wrap:wrap;gap:8px;margin-top:4px">
+<button class="btn-warn" onclick="doReboot()">&#128260; Reboot</button>
+<button class="btn-danger" onclick="doFactory()">&#128465; Factory Reset</button>
+</div>
+<div class="status-box" id="action-result">&#8212;</div>
+</div>
+
+<!-- RPC Explorer -->
+<div class="card" style="grid-column:1/-1">
+<details id="rpc-explorer">
+<summary onclick="onExplorerOpen()">&#128270; RPC Explorer</summary>
+<ul id="methods-list" style="margin-top:8px"></ul>
+<div style="margin-top:12px">
+<label style="font-size:.82rem;color:#555">Raw JSON-RPC request</label>
+<textarea id="rpc-in" spellcheck="false">{"jsonrpc":"2.0","method":"Sys.Info","id":1}</textarea>
+<div class="row" style="margin-top:6px">
+<button class="btn-primary btn-sm" onclick="sendRaw()">Send</button>
+</div>
+<div class="status-box" id="rpc-out">&#8212;</div>
+</div>
+</details>
+</div>
+
+</div><!-- end .grid -->
+
+<script>
+var rpcId = 100;
+
+function rpc(method, params) {
+  return fetch('/rpc', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({jsonrpc: '2.0', method: method, params: params || null, id: ++rpcId})
+  }).then(function(r) { return r.json(); });
+}
+
+function pretty(obj, indent) {
+  if (obj === null || obj === undefined) return '(null)';
+  if (typeof obj === 'boolean') return obj ? 'true' : 'false';
+  if (typeof obj !== 'object') return String(obj);
+  indent = indent || 0;
+  var pad = '  '.repeat(indent);
+  return Object.keys(obj).map(function(k) {
+    var v = obj[k];
+    if (typeof v === 'object' && v !== null) return pad + k + ':\n' + pretty(v, indent + 1);
+    return pad + k + ': ' + v;
+  }).join('\n');
+}
+
+function loadSysInfo() {
+  rpc('Sys.Info').then(function(r) {
+    if (r.result) {
+      document.getElementById('devname').textContent = r.result.device_name || 'ESP32-C3 Panel';
+      document.getElementById('subtitle').textContent =
+        r.result.model + ' | IDF ' + r.result.idf_version + ' | Free heap: ' + r.result.free_heap + ' B';
+      document.getElementById('sys-info').textContent = pretty(r.result);
+    } else {
+      document.getElementById('sys-info').textContent = 'Error: ' + JSON.stringify(r.error);
+    }
+  }).catch(function(e) { document.getElementById('sys-info').textContent = 'Request failed: ' + e; });
+}
+
+function loadWifiInfo() {
+  rpc('Wifi.Info').then(function(r) {
+    if (r.result) {
+      var badge = document.getElementById('wifi-badge');
+      var ip = (r.result.sta && r.result.sta.ip) || '';
+      if (ip && ip !== '0.0.0.0') {
+        badge.className = 'badge badge-green'; badge.textContent = 'Connected ' + ip;
+      } else {
+        badge.className = 'badge badge-red'; badge.textContent = 'Not connected';
+      }
+      document.getElementById('wifi-info').textContent = pretty(r.result);
+    } else {
+      document.getElementById('wifi-badge').className = 'badge badge-red';
+      document.getElementById('wifi-badge').textContent = 'Error';
+      document.getElementById('wifi-info').textContent = 'Error: ' + JSON.stringify(r.error);
+    }
+  }).catch(function(e) { document.getElementById('wifi-info').textContent = 'Request failed: ' + e; });
+}
+
+function loadMqttInfo() {
+  rpc('Mqtt.Info').then(function(r) {
+    if (r.result) {
+      var badge = document.getElementById('mqtt-badge');
+      if (r.result.connected) {
+        badge.className = 'badge badge-green'; badge.textContent = 'Connected';
+      } else {
+        badge.className = 'badge badge-red'; badge.textContent = 'Disconnected';
+      }
+      document.getElementById('mqtt-info').textContent = pretty(r.result);
+      if (r.result.host) document.getElementById('mqtt-host').value = r.result.host;
+      if (r.result.port) document.getElementById('mqtt-port').value = r.result.port;
+      if (r.result.username) document.getElementById('mqtt-user').value = r.result.username;
+    } else {
+      document.getElementById('mqtt-badge').className = 'badge badge-red';
+      document.getElementById('mqtt-badge').textContent = 'Error';
+      document.getElementById('mqtt-info').textContent = 'Error: ' + JSON.stringify(r.error);
+    }
+  }).catch(function(e) { document.getElementById('mqtt-info').textContent = 'Request failed: ' + e; });
+}
+
+function loadConfig() {
+  rpc('Config.Get').then(function(r) {
+    if (r.result) {
+      if (r.result.wifi_sta_ssid) document.getElementById('sta-ssid').value = r.result.wifi_sta_ssid;
+      document.getElementById('sta-en').checked = !!r.result.wifi_sta_enabled;
+    }
+  }).catch(function() {});
+}
+
+function applyWifiSta() {
+  var el = document.getElementById('sta-result');
+  el.textContent = 'Sending\u2026';
+  var ssid = document.getElementById('sta-ssid').value.trim();
+  var pass = document.getElementById('sta-pass').value;
+  var en = document.getElementById('sta-en').checked;
+  var params = {enable: en};
+  if (ssid) params.ssid = ssid;
+  if (pass) params.password = pass;
+  rpc('Wifi.Sta.Set', params).then(function(r) {
+    el.textContent = r.result ? pretty(r.result) : 'Error: ' + JSON.stringify(r.error);
+    loadWifiInfo();
+  }).catch(function(e) { el.textContent = 'Request failed: ' + e; });
+}
+
+function applyMqtt() {
+  var el = document.getElementById('mqtt-set-result');
+  el.textContent = 'Sending\u2026';
+  var params = {};
+  var host = document.getElementById('mqtt-host').value.trim();
+  var port = parseInt(document.getElementById('mqtt-port').value, 10);
+  var user = document.getElementById('mqtt-user').value.trim();
+  var pass = document.getElementById('mqtt-pass').value;
+  if (host) params.host = host;
+  if (port > 0 && port <= 65535) params.port = port;
+  if (user) params.username = user;
+  if (pass) params.password = pass;
+  rpc('Mqtt.Set', params).then(function(r) {
+    el.textContent = r.result ? pretty(r.result) : 'Error: ' + JSON.stringify(r.error);
+    setTimeout(loadMqttInfo, 2000);
+  }).catch(function(e) { el.textContent = 'Request failed: ' + e; });
+}
+
+function doReboot() {
+  if (!confirm('Reboot the device now?')) return;
+  var el = document.getElementById('action-result');
+  el.textContent = 'Sending\u2026';
+  rpc('Sys.Reboot').then(function(r) {
+    el.textContent = r.result ? pretty(r.result) : 'Error: ' + JSON.stringify(r.error);
+  }).catch(function(e) { el.textContent = 'Request failed: ' + e; });
+}
+
+function doFactory() {
+  if (!confirm('WARNING: This will erase all saved settings and reboot.\nContinue?')) return;
+  var el = document.getElementById('action-result');
+  el.textContent = 'Sending\u2026';
+  rpc('Sys.Factory').then(function(r) {
+    el.textContent = r.result ? pretty(r.result) : 'Error: ' + JSON.stringify(r.error);
+  }).catch(function(e) { el.textContent = 'Request failed: ' + e; });
+}
+
+var methodsLoaded = false;
+function onExplorerOpen() {
+  if (methodsLoaded) return;
+  rpc('Sys.Methods').then(function(r) {
+    if (!r.result || !Array.isArray(r.result)) return;
+    methodsLoaded = true;
+    var ul = document.getElementById('methods-list');
+    ul.innerHTML = '';
+    r.result.forEach(function(m) {
+      var li = document.createElement('li');
+      li.textContent = m;
+      li.style.cursor = 'pointer';
+      li.title = 'Click to populate';
+      li.onclick = function() {
+        document.getElementById('rpc-in').value = JSON.stringify({jsonrpc: '2.0', method: m, id: 1}, null, 2);
+      };
+      ul.appendChild(li);
+    });
+  }).catch(function() {});
+}
+
+function sendRaw() {
+  var el = document.getElementById('rpc-out');
+  var body = document.getElementById('rpc-in').value.trim();
+  if (!body) { el.textContent = 'Empty input'; return; }
+  el.textContent = 'Sending\u2026';
+  fetch('/rpc', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: body
+  }).then(function(r) { return r.json(); })
+    .then(function(r) { el.textContent = JSON.stringify(r, null, 2); })
+    .catch(function(e) { el.textContent = 'Request failed: ' + e; });
+}
+
+function startAutoRefresh() {
+  setInterval(function() { loadWifiInfo(); loadMqttInfo(); }, 10000);
+}
+
+loadSysInfo();
+loadWifiInfo();
+loadMqttInfo();
+loadConfig();
+startAutoRefresh();
+</script>
+</body>
+</html>
