@@ -13,6 +13,7 @@
 #include "gpio_led.h"
 #include "gpio_rgb.h"
 #include "http_server.h"
+#include "m5stack_unit_ir.h"
 #include "max7219.h"
 #include "mqtt_manager.h"
 #include "nvs_flash.h"
@@ -50,6 +51,9 @@ void app_main(void) {
   /* Initialize buzzer and run demo (4x on/off every 5s) */
   buzzer_init();
   // buzzer_demo();
+
+  /* Initialize IR transceiver */
+  ir_init();
 
   /* Initialize WiFi (must be before BLE to allow BLE provisioning if needed) */
 

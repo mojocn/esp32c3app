@@ -147,6 +147,22 @@ async function setRgb() {
     catch (e) { toast(e.message, true); }
 }
 
+/* ─── IR ─── */
+document.getElementById('ir-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    const addr = parseInt(f.addr.value, 10);
+    const cmd = parseInt(f.cmd.value, 10);
+    try {
+        await rpc('Ir.Send', { addr, cmd });
+        document.getElementById('ir-result').textContent = `Sent addr=0x${addr.toString(16).padStart(2, '0').toUpperCase()} cmd=0x${cmd.toString(16).padStart(2, '0').toUpperCase()}`;
+        toast('IR sent');
+    } catch (e) {
+        document.getElementById('ir-result').textContent = '';
+        toast(e.message, true);
+    }
+});
+
 /* ─── DISPLAY ─── */
 async function setEffect(random) {
     const params = random ? null : { n: parseInt(document.getElementById('effect-n').value, 10) };

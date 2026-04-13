@@ -11,10 +11,10 @@ JsonRpcResponse *m_light_led_set(cJSON *params) {
   if (!cJSON_IsNumber(gpio_json) || !cJSON_IsNumber(state_json)) {
     return jsonrpc_response_create(NULL, "Invalid params: 'gpio' and 'state' must be numbers", JSONRPC_INVALID_PARAMS);
   }
-  int gpio_num = gpio_json->valueint; // must be one of 4,5,0
+  int gpio_num = gpio_json->valueint; // must be 0
   int state = state_json->valueint;   // must be 0 or 1
-  if ((gpio_num != GPIO_LIGHT_4 && gpio_num != GPIO_LIGHT_5 && gpio_num != GPIO_LIGHT_0) || (state != 0 && state != 1)) {
-    return jsonrpc_response_create(NULL, "Invalid params: 'gpio' must be 4, 5, or 0 and 'state' must be 0 or 1", JSONRPC_INVALID_PARAMS);
+  if (( gpio_num != GPIO_LIGHT_0) || (state != 0 && state != 1)) {
+    return jsonrpc_response_create(NULL, "Invalid params: 'gpio' must be 0 and 'state' must be 0 or 1", JSONRPC_INVALID_PARAMS);
   }
 
   esp_err_t err = gpio_led_set(gpio_num, state);

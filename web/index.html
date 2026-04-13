@@ -20,6 +20,7 @@
     <button class="tab" data-tab="wifi">WiFi</button>
     <button class="tab" data-tab="lights">Lights</button>
     <button class="tab" data-tab="display">Display</button>
+    <button class="tab" data-tab="ir">IR</button>
     <button class="tab" data-tab="mqtt">MQTT</button>
     <button class="tab" data-tab="cron">Cron</button>
     <button class="tab" data-tab="system">System</button>
@@ -112,6 +113,19 @@
           <button onclick="setEffect(false)">Run Effect</button>
           <button onclick="setEffect(true)">Random</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ── IR ── -->
+    <section id="ir" class="tab-content">
+      <div class="card">
+        <h2>IR Transmitter (NEC)</h2>
+        <form id="ir-form">
+          <label>Address (0–255)<input type="number" name="addr" min="0" max="255" value="0"></label>
+          <label>Command (0–255)<input type="number" name="cmd" min="0" max="255" value="0"></label>
+          <button type="submit">Send IR</button>
+        </form>
+        <div id="ir-result" class="muted" style="margin-top:8px"></div>
       </div>
     </section>
 
