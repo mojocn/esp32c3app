@@ -8,10 +8,12 @@ Firmware for the ESP32-C3 that exposes a **JSON-RPC 2.0** API over three transpo
 | --------------- | ----------------------------------------------------------- |
 | JSON-RPC 2.0    | HTTP POST `/rpc`, BLE GATT NUS service, MQTT                |
 | RGB LED         | WS2812 NeoPixel on GPIO 8                                   |
-| GPIO LEDs       | GPIOs 0, 4, 5                                               |
+| GPIO LED        | GPIO 0                                                      |
 | DHT11 sensor    | Temperature & humidity on GPIO 2                            |
 | MAX7219 display | 8×8 LED matrix via SPI (CS=19, CLK=1, DIN=18)               |
 | Buzzer          | Active buzzer on GPIO 10                                    |
+| IR transceiver  | M5Stack Unit IR, NEC protocol (TX GPIO 4, RX GPIO 5)        |
+| Cron engine     | SNTP-synced cron scheduler, up to 16 NVS-persisted jobs     |
 | WiFi            | STA + AP modes, NVS-persisted config                        |
 | OTA             | HTTP/HTTPS firmware update via `Sys.Ota`                    |
 | Config          | NVS persistence, SPIFFS fallback (`spiffs/wifi_config.txt`) |
@@ -24,8 +26,8 @@ Firmware for the ESP32-C3 that exposes a **JSON-RPC 2.0** API over three transpo
 | DHT11 data       | 2    |
 | Buzzer           | 10   |
 | LED 0            | 0    |
-| LED 4            | 4    |
-| LED 5            | 5    |
+| IR TX            | 4    |
+| IR RX            | 5    |
 | MAX7219 CS       | 19   |
 | MAX7219 CLK      | 1    |
 | MAX7219 DIN      | 18   |
@@ -200,27 +202,109 @@ Set the WS2812 RGB LED color.
 }
 ```
 
+#### `Ir.Send`
+
+Transmit a NEC IR frame.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "Ir.Send",
+  "params": { "addr": 0x00, "cmd": 0x12 },
+  "id": 1
+}
+```
+
+#### `Mqtt.Set`
+
+Configure the MQTT broker connection. Changes are persisted to NVS and the client reconnects automatically.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "Mqtt.Set",
+  "params": {
+    "host": "192.168.1.5",
+    "port": 1883,
+    "username": "user",
+    "password": "pass"
+  },
+  "id": 1
+}
+```
+
+#### `Mqtt.Info`
+
+Returns the current MQTT connection status and configuration (password redacted).
+
 #### `Config.Get`
 
 Returns the full device configuration as JSON (passwords redacted).
 
 #### `Config.Set`
 
-Updates device configuration. Persisted to NVS immediately.
+Updates device configuration. Persisted to NVS immediately. Accepted fields: `device_name`, `wifi_ap_ssid`, `wifi_ap_password`, `wifi_ap_enabled`.
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "Config.Set",
   "params": {
-    "device_name": "my-device",
-    "mqtt_broker_host": "192.168.1.5",
-    "mqtt_broker_port": 1883,
-    "mqtt_username": "user",
-    "mqtt_password": "pass"
+    "device_name": "my-device"
   },
   "id": 1
 }
+```
+
+#### `Cron.List`
+
+Returns all scheduled cron jobs.
+
+#### `Cron.Get`
+
+Returns a single cron job by `id`.
+
+```json
+{ "jsonrpc": "2.0", "method": "Cron.Get", "params": { "id": 1 }, "id": 1 }
+```
+
+#### `Cron.Create`
+
+Creates a new cron job. Jobs are persisted to NVS and survive reboots (max 16 jobs).
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "Cron.Create",
+  "params": {
+    "expression": "0 * * * *",
+    "method": "Light.Rgb.Set",
+    "params": { "on": 0 },
+    "enabled": true
+  },
+  "id": 1
+}
+```
+
+#### `Cron.Update`
+
+Updates an existing cron job. All fields except `id` are optional.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "Cron.Update",
+  "params": { "id": 1, "enabled": false },
+  "id": 1
+}
+```
+
+#### `Cron.Delete`
+
+Deletes a cron job by `id`.
+
+```json
+{ "jsonrpc": "2.0", "method": "Cron.Delete", "params": { "id": 1 }, "id": 1 }
 ```
 
 ## Project Structure
@@ -228,12 +312,13 @@ Updates device configuration. Persisted to NVS immediately.
 ```
 main/
   main.c              – Entry point, peripheral initialization
-  config.[ch]         – NVS-backed AppConfig (WiFi, MQTT, device name)
+  config.[ch]         – NVS-backed AppConfig (WiFi, device name)
   wifi_manager.[ch]   – WiFi STA/AP management
   http_server.[ch]    – HTTP server with /rpc endpoint
   ble_gatt_server.[ch]– BLE NUS-compatible GATT server
   mqtt_manager.[ch]   – MQTT client and heartbeat
   ota_manager.[ch]    – OTA firmware update task
+  cron_engine.[ch]    – SNTP-synced cron scheduler (NVS-persisted jobs)
   rpc_m.[ch]          – RPC dispatcher (method registry)
   rpc_json.[ch]       – JSON-RPC 2.0 envelope parsing & response helpers
   rpc_m_sys.[ch]      – Sys.* handlers
@@ -242,12 +327,16 @@ main/
   rpc_m_ht.[ch]       – Ht.* handlers (DHT11)
   rpc_m_display.[ch]  – Display.* handlers (MAX7219)
   rpc_m_light.[ch]    – Light.* handlers (LED, RGB)
+  rpc_m_ir.[ch]       – Ir.* handlers (M5Stack Unit IR)
   rpc_m_config.[ch]   – Config.* handlers
+  rpc_m_mqtt.[ch]     – Mqtt.* handlers
+  rpc_m_cron.[ch]     – Cron.* handlers
   dht11.[ch]          – DHT11 driver with periodic background task
   max7219.[ch]        – MAX7219 SPI driver + effect engine
   gpio_led.[ch]       – GPIO LED driver
   gpio_rgb.[ch]       – WS2812 RGB LED driver (via led_strip component)
   buzzer.[ch]         – Buzzer driver
+  m5stack_unit_ir.[ch]– M5Stack Unit IR driver (RMT-based NEC TX/RX)
   app_event.[ch]      – Application-level event bus
 spiffs/
   wifi_config.txt     – Default WiFi credentials (SSID / password)
@@ -257,4 +346,4 @@ sdkconfig.defaults    – Default Kconfig overrides
 
 ## Configuration
 
-Runtime configuration is stored in NVS under the `config` namespace and can be managed via `Config.Get` / `Config.Set`. The MQTT heartbeat interval is fixed at compile time (`MQTT_HEARTBEAT_INTERVAL_S`, default 60 s).
+Runtime configuration is stored in NVS under the `config` namespace and can be managed via `Config.Get` / `Config.Set`. MQTT broker settings have their own dedicated `Mqtt.Set` / `Mqtt.Info` methods. Cron jobs are also persisted to NVS automatically.
