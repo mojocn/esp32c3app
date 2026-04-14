@@ -28,9 +28,9 @@ typedef struct {
 } RpcMethodEntry;
 
 static const RpcMethodEntry rpc_methods[] = {
-    {"Sys.Info", m_sys_info}, {"Sys.Reboot", m_sys_reboot},   {"Sys.Factory", m_sys_factory},       {"Sys.Methods", m_sys_methods},     {"Wifi.Sta.Set", m_wifi_sta_set},   {"Wifi.Ap.Set", m_wifi_ap_set}, {"Wifi.Info", m_wifi_info},   {"Ble.Info", m_ble_info},
-    {"Sys.Ota", m_sys_ota},   {"Ht.Info", m_ht_info},         {"Display.Effect", m_display_effect}, {"Light.Led.Set", m_light_led_set}, {"Light.Rgb.Set", m_light_rgb_set}, {"Config.Get", m_config_get},   {"Config.Set", m_config_set}, {"Cron.List", m_cron_list},
-    {"Cron.Get", m_cron_get}, {"Cron.Create", m_cron_create}, {"Cron.Update", m_cron_update},       {"Cron.Delete", m_cron_delete},     {"Mqtt.Set", m_mqtt_set},           {"Mqtt.Info", m_mqtt_info},     {"Ir.Send", m_ir_send},
+    {"Sys.Info", m_sys_info},       {"Sys.Reboot", m_sys_reboot},         {"Sys.Factory", m_sys_factory},     {"Sys.Methods", m_sys_methods},     {"Wifi.Sta.Set", m_wifi_sta_set}, {"Wifi.Ap.Set", m_wifi_ap_set}, {"Wifi.Info", m_wifi_info}, {"Ble.Info", m_ble_info}, {"Sys.Ota", m_sys_ota},
+    {"Ht.Info", m_ht_info},         {"Display.Effect", m_display_effect}, {"Light.Led.Set", m_light_led_set}, {"Light.Rgb.Set", m_light_rgb_set}, {"Config.Get", m_config_get},     {"Config.Set", m_config_set},   {"Cron.List", m_cron_list}, {"Cron.Get", m_cron_get}, {"Cron.Create", m_cron_create},
+    {"Cron.Update", m_cron_update}, {"Cron.Delete", m_cron_delete},       {"Mqtt.Set", m_mqtt_set},           {"Mqtt.Info", m_mqtt_info},         {"Ir.Send", m_ir_send},           {"Ir.Record", m_ir_record},     {"Ir.List", m_ir_list},
 };
 static int rpc_method_count = sizeof(rpc_methods) / sizeof(rpc_methods[0]);
 

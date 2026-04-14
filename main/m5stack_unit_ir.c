@@ -45,6 +45,7 @@ typedef struct {
   uint8_t cmd;
 } nec_result_t;
 static QueueHandle_t nec_queue = NULL;
+static TaskHandle_t ir_rx_task_handle = NULL;
 
 // ---------------------------
 // NEC 解码（ISR 安全）
@@ -202,5 +203,27 @@ void ir_init(void) {
   nec_queue = xQueueCreate(8, sizeof(nec_result_t));
   tx_init();
   rx_init();
-  xTaskCreate(ir_rx_task, "ir_rx", 2048, NULL, 5, NULL);
+  xTaskCreate(ir_rx_task, "ir_rx", 2048, NULL, 5, &ir_rx_task_handle);
+}
+
+bool ir_record_nec(uint8_t *addr, uint8_t *cmd, uint32_t timeout_ms) {
+  if (!nec_queue || !ir_rx_task_handle) return false;
+
+  // Suspend background consumer so the signal reaches us
+  vTaskSuspend(ir_rx_task_handle);
+
+  // Drain any stale entries from the queue
+  nec_result_t r;
+  while (xQueueReceive(nec_queue, &r, 0) == pdTRUE) {}
+
+  // Wait for a fresh NEC signal
+  bool got = (xQueueReceive(nec_queue, &r, pdMS_TO_TICKS(timeout_ms)) == pdTRUE);
+
+  vTaskResume(ir_rx_task_handle);
+
+  if (got) {
+    *addr = r.addr;
+    *cmd = r.cmd;
+  }
+  return got;
 }

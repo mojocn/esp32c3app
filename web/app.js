@@ -163,6 +163,55 @@ document.getElementById('ir-form').addEventListener('submit', async e => {
     }
 });
 
+document.getElementById('ir-record-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    const name = f.name.value.trim();
+    const timeout_ms = parseInt(f.timeout_ms.value, 10);
+    const resultEl = document.getElementById('ir-record-result');
+    resultEl.textContent = 'Waiting for IR signal…';
+    const btn = f.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+        const res = await rpc('Ir.Record', { name, timeout_ms });
+        resultEl.textContent = `Recorded "${res.name}" addr=0x${res.addr.toString(16).padStart(2, '0').toUpperCase()} cmd=0x${res.cmd.toString(16).padStart(2, '0').toUpperCase()}`;
+        toast('IR code recorded');
+        irRefreshList();
+    } catch (err) {
+        resultEl.textContent = '';
+        toast(err.message, true);
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+async function irRefreshList() {
+    const el = document.getElementById('ir-list');
+    el.textContent = 'Loading…';
+    try {
+        const list = await rpc('Ir.List', null);
+        if (!list || list.length === 0) {
+            el.textContent = 'No saved IR codes.';
+            return;
+        }
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        const header = table.insertRow();
+        ['Name', 'Addr', 'Cmd'].forEach(h => { const th = document.createElement('th'); th.textContent = h; header.appendChild(th); });
+        list.forEach(item => {
+            const row = table.insertRow();
+            row.insertCell().textContent = item.name;
+            row.insertCell().textContent = '0x' + item.addr.toString(16).padStart(2, '0').toUpperCase();
+            row.insertCell().textContent = '0x' + item.cmd.toString(16).padStart(2, '0').toUpperCase();
+        });
+        el.innerHTML = '';
+        el.appendChild(table);
+    } catch (err) {
+        el.textContent = '';
+        toast(err.message, true);
+    }
+}
+
 /* ─── DISPLAY ─── */
 async function setEffect(random) {
     const params = random ? null : { n: parseInt(document.getElementById('effect-n').value, 10) };

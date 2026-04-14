@@ -1,6 +1,7 @@
 
 #include "app_event.h"
 #include "esp_event.h"
+#include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "mqtt_manager.h"
@@ -32,6 +33,8 @@ static void event_handler_all(void *arg, esp_event_base_t event_base, int32_t ev
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_LOST_IP) {
     ESP_LOGI(TAG, "IP lost - stopping MQTT manager");
     mqtt_manager_stop();
+  } else if (event_base == ESP_HTTP_SERVER_EVENT) {
+    ESP_LOGD(TAG, "Ignored HTTP server event: id=%d", event_id);
   } else {
     ESP_LOGI(TAG, "Unhandled event: base=%s id=%d", event_base ? event_base : "(null)", event_id);
   }
@@ -39,5 +42,6 @@ static void event_handler_all(void *arg, esp_event_base_t event_base, int32_t ev
 
 void app_event_init() {
   ESP_ERROR_CHECK(esp_event_loop_create_default());
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &event_handler_all, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler_all, NULL, NULL));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler_all, NULL, NULL));
 }

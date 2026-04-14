@@ -127,6 +127,21 @@
         </form>
         <div id="ir-result" class="muted" style="margin-top:8px"></div>
       </div>
+      <div class="card">
+        <h2>Record IR Code</h2>
+        <form id="ir-record-form">
+          <label>Name (max 15 chars)<input type="text" name="name" maxlength="15" placeholder="e.g. tv_power"
+              required></label>
+          <label>Timeout (ms)<input type="number" name="timeout_ms" min="1000" max="30000" value="10000"></label>
+          <button type="submit">Start Recording</button>
+        </form>
+        <div id="ir-record-result" class="muted" style="margin-top:8px"></div>
+      </div>
+      <div class="card full">
+        <h2>Saved IR Codes</h2>
+        <button onclick="irRefreshList()">Refresh</button>
+        <div id="ir-list" class="muted" style="margin-top:8px">Press Refresh to load.</div>
+      </div>
     </section>
 
     <!-- ── MQTT ── -->
